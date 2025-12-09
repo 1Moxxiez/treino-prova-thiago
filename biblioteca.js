@@ -14,7 +14,7 @@ class Livro{
             this.disponivel = false
             return true
         } else {
-            console.log(`Livro ${this.nome} indisponivél`)
+            console.log(`Livro ${this.titulo} indisponível`) 
             return false
         }
         
@@ -92,4 +92,8 @@ const profAlberto = new Professor("Alberto", "P-99", "Física");
 alunoJoao.pegarLivro(livro1);
 alunoJoao.pegarLivro(livro2);
 alunoJoao.pegarLivro(livro3);
-alunoJoao.pegarLivro(livro4); //
+alunoJoao.pegarLivro(livro4); //erro
+
+profAlberto.pegarLivro(livro1)
+profAlberto.pegarLivro(livro4)
+
