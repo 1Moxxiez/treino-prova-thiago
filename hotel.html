@@ -2,109 +2,220 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Hotel com Registro</title>
+    <title>Hotel Completo</title>
+    <style>
+        /* ESTILOS CSS (Para deixar visualmente organizado) */
+        body { font-family: sans-serif; padding: 20px; }
+        /* .box: Classe genérica para as caixas de contorno */
+        .box { padding: 15px; border: 2px solid; margin-bottom: 15px; border-radius: 8px; }
+        
+        /* Cores específicas para cada área */
+        .cinza { border-color: #666; background-color: #f9f9f9; }
+        .azul { border-color: #007bff; background-color: #f0f8ff; }
+        .laranja { border-color: #ff9800; background-color: #fff8e1; }
+        
+        h3 { margin-top: 0; }
+        ul { border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+    </style>
 </head>
 <body>
-    <h1>🏨 Hotel (Construção + Check-in)</h1>
+    <h1>🏨 Hotel Beira-Mar (Sistema Completo)</h1>
 
-    <div style="background: #eee; padding: 10px;">
-        <h3>1. Cadastrar Quarto (Construir)</h3>
+    <div class="box cinza">
+        <h3>1. Construir Quarto (Cadastro)</h3>
         <input id="numQuarto" placeholder="Número (ex: 101)">
         <select id="tipoQuarto">
-            <option value="simples">Simples</option>
-            <option value="luxo">Luxo</option>
+            <option value="simples">Simples (R$ 100)</option>
+            <option value="luxo">Luxo (R$ 250)</option>
         </select>
-        <button onclick="cadastrarQuarto()">Cadastrar Quarto</button>
+        <button onclick="cadastrarQuarto()">Construir</button>
     </div>
 
-    <div style="background: #cce5ff; padding: 10px; margin-top: 10px;">
-        <h3>2. Check-in (Ocupar Quarto)</h3>
-        <p>Escolha um quarto existente e diga quem vai entrar:</p>
-        <input id="buscaNumero" placeholder="Número do quarto existente">
+    <div class="box azul">
+        <h3>2. Check-in (Entrada)</h3>
+        <p>Hóspede chegou? Escolha o quarto:</p>
+        <input id="buscaNumero" placeholder="Número do quarto">
         <input id="nomeHospede" placeholder="Nome do Hóspede">
-        <button onclick="fazerCheckin()">Fazer Check-in</button>
+        <button onclick="fazerCheckin()">Realizar Check-in</button>
     </div>
 
-    <h3>Ocupações Atuais:</h3>
-    <ul id="listaOcupados"></ul>
+    <div class="box laranja">
+        <h3>3. Check-out (Saída e Pagamento)</h3>
+        <p>Hóspede saindo? Libere o quarto:</p>
+        <input id="saidaNumero" placeholder="Número do quarto">
+        <button onclick="fazerCheckout()">Fechar Conta</button>
+    </div>
+
+    <div style="display: flex; gap: 20px;">
+        <div style="flex: 1;">
+            <h3>🛏️ Quartos Ocupados (Agora)</h3>
+            <ul id="listaOcupados"></ul>
+        </div>
+        
+        <div style="flex: 1; color: gray;">
+            <h3>💰 Histórico (Já saíram)</h3>
+            <ul id="listaHistorico"></ul>
+        </div>
+    </div>
 
     <script>
-        // --- 1. MODELO ---
+        // ==========================================================
+        // 1. MODELO (A Classe Quarto)
+        // Define o que é um quarto e suas regras de preço
+        // ==========================================================
         class Quarto {
             constructor(numero, tipo) {
-                this.numero = numero; // Ex: "101"
-                this.tipo = tipo;     // Ex: "Luxo"
+                this.numero = numero; // Ex: 101
+                this.tipo = tipo;     // Ex: 'simples' ou 'luxo'
+                
+                // Define o preço automaticamente baseado no tipo
+                // Operador Ternário: (Teste) ? ValorSeVerdadeiro : ValorSeFalso
+                this.valorDiaria = (tipo === "luxo") ? 250 : 100;
             }
         }
-    
-        // --- 2. SISTEMA (HOTEL) ---
+
+        // ==========================================================
+        // 2. O SISTEMA (Gerenciamento do Hotel)
+        // ==========================================================
         class Hotel {
-            quartosCadastrados = []; // LISTA 1: Os quartos físicos (paredes e portas).
-            ocupacoes = [];          // LISTA 2: As pessoas que estão dormindo lá hoje.
-    
-            // FUNCIONALIDADE A: Construir/Cadastrar Quarto
+            quartosCadastrados = []; // LISTA 1: Inventário (Os quartos físicos que existem)
+            ocupacoes = [];          // LISTA 2: Ocupados (Quem está dormindo lá agora)
+            historico = [];          // LISTA 3: Histórico (Quem já pagou e foi embora)
+
+            // --- FUNCIONALIDADE A: CADASTRAR QUARTO ---
             cadastrar(novoQuarto) {
-                // (Poderíamos adicionar validação aqui para não criar dois quartos 101, mas vamos simplificar)
-                this.quartosCadastrados.push(novoQuarto); // Salva na lista de quartos existentes
-                alert(`Quarto ${novoQuarto.numero} criado com sucesso!`);
+                // Adiciona o objeto quarto na lista de quartos existentes
+                this.quartosCadastrados.push(novoQuarto);
+                alert(`Quarto ${novoQuarto.numero} construído!`);
             }
-    
-            // FUNCIONALIDADE B: Check-in (Vincular uma pessoa a um quarto existente)
+
+            // --- FUNCIONALIDADE B: CHECK-IN (Entrada) ---
             fazerCheckin(numeroQuarto, nomePessoa) {
-                // PASSO 1: Verifica se o quarto existe fisicamente
-                // Procura na lista 'quartosCadastrados' um quarto com esse número
+                // 1. VALIDAÇÃO: O quarto existe fisicamente?
+                // Procura na lista 'quartosCadastrados'
                 let quartoReal = this.quartosCadastrados.find(q => q.numero === numeroQuarto);
                 
-                // Se não achou (quartoReal é undefined), erro.
-                if (!quartoReal) {
-                    alert("Erro: Esse quarto não existe no hotel! Cadastre primeiro.");
-                    return;
-                }
-    
-                // (Aqui poderíamos verificar se já tem alguém dentro, mas focaremos no cadastro)
-    
-                // PASSO 2: Cria o objeto de Ocupação
+                // Se não achou (undefined), para tudo.
+                if (!quartoReal) { alert("Quarto não existe! Cadastre primeiro."); return; }
+
+                // 2. VALIDAÇÃO: O quarto já está ocupado?
+                // Procura na lista 'ocupacoes' se tem alguém nesse número de quarto
+                let jaOcupado = this.ocupacoes.find(oc => oc.quarto.numero === numeroQuarto);
+                
+                // Se achou alguém, impede a entrada.
+                if (jaOcupado) { alert("Quarto já está ocupado!"); return; }
+
+                // 3. REGISTRO: Cria o objeto da estadia
                 let ocupacao = {
-                    quarto: quartoReal, // Guarda o objeto do quarto
-                    hospede: nomePessoa, // Guarda o nome da pessoa
-                    entrada: new Date()  // Guarda a hora
+                    quarto: quartoReal,   // Guarda o objeto do quarto inteiro
+                    hospede: nomePessoa,  // Nome da pessoa
+                    entrada: new Date(),  // Hora que entrou (agora)
+                    saida: null,          // Hora que saiu (ainda não saiu)
+                    totalPago: 0          // Valor final (ainda é 0)
                 };
-    
-                // Adiciona na lista de ocupações ativas
+
+                // Adiciona na lista de ocupados
                 this.ocupacoes.push(ocupacao);
+                
+                // Atualiza o HTML
                 this.atualizarTela();
             }
-    
-            // Função visual
-            atualizarTela() {
-                let lista = document.getElementById("listaOcupados");
-                lista.innerHTML = "";
+
+            // --- FUNCIONALIDADE C: CHECK-OUT (Saída) ---
+            fazerCheckout(numeroQuarto) {
+                // 1. BUSCA: Acha a ocupação ativa desse quarto pelo número
+                // findIndex retorna a posição (0, 1, 2...) na lista. Se não achar, retorna -1.
+                let index = this.ocupacoes.findIndex(oc => oc.quarto.numero === numeroQuarto);
                 
+                // Se não tiver ninguém lá, avisa erro.
+                if (index === -1) { alert("Ninguém está ocupando este quarto agora."); return; }
+
+                // Pega o registro usando o índice encontrado
+                let registro = this.ocupacoes[index];
+
+                // 2. CÁLCULO: Marca saída e calcula preço
+                registro.saida = new Date(); // Marca hora de agora
+                
+                // --- TRUQUE DE SIMULAÇÃO ---
+                // Calculamos a diferença em milissegundos e dividimos por 1000 para ter segundos.
+                // Fingimos que 1 segundo = 1 diária para você conseguir testar rápido.
+                let segundos = (registro.saida - registro.entrada) / 1000;
+                
+                // Arredonda para cima (Math.ceil). Se ficou 0.1s, cobra 1 diária.
+                let dias = Math.ceil(segundos);
+                if(dias < 1) dias = 1; // Garante mínimo de 1 diária
+
+                // Multiplica dias pelo valor do quarto (100 ou 250)
+                registro.totalPago = dias * registro.quarto.valorDiaria;
+
+                // 3. MOVER: Joga esse registro para a lista de Histórico (Arquivo Morto)
+                this.historico.push(registro);
+
+                // 4. REMOVER: Tira da lista de Ocupados (Libera o quarto para outro)
+                this.ocupacoes.splice(index, 1);
+
+                alert(`Conta fechada! Valor: R$ ${registro.totalPago.toFixed(2)}`);
+                this.atualizarTela();
+            }
+
+            // --- FUNCIONALIDADE D: ATUALIZAR TELA ---
+            atualizarTela() {
+                // Pega os elementos <ul> do HTML
+                let listaO = document.getElementById("listaOcupados");
+                let listaH = document.getElementById("listaHistorico");
+                
+                // Limpa o conteúdo antigo
+                listaO.innerHTML = "";
+                listaH.innerHTML = "";
+
+                // LOOP 1: Preenche a lista de Ocupados
                 this.ocupacoes.forEach(oc => {
-                    // Mostra: Quarto 101 (Simples) - Hóspede: João
-                    // Note como acessamos oc.quarto.numero (navegando dentro dos objetos)
-                    lista.innerHTML += `<li>Quarto ${oc.quarto.numero} (${oc.quarto.tipo}) - Hóspede: ${oc.hospede}</li>`;
+                    listaO.innerHTML += `<li>Quarto ${oc.quarto.numero} (${oc.quarto.tipo}) - ${oc.hospede}</li>`;
+                });
+
+                // LOOP 2: Preenche a lista de Histórico
+                this.historico.forEach(oc => {
+                    listaH.innerHTML += `
+                        <li>
+                            ✅ <strong>Quarto ${oc.quarto.numero}</strong> (${oc.hospede})
+                            <br> Pago: R$ ${oc.totalPago.toFixed(2)}
+                        </li>`;
                 });
             }
         }
-    
-        // --- 3. BOTÕES ---
+
+        // ==========================================================
+        // 3. INICIALIZAÇÃO (Conexão com Botões HTML)
+        // ==========================================================
+        
+        // Inicia o sistema
         const sistema = new Hotel();
-    
-        // Botão da área cinza (Cadastro)
+
+        // Botão Construir
         function cadastrarQuarto() {
             let num = document.getElementById("numQuarto").value;
             let tipo = document.getElementById("tipoQuarto").value;
-            // Cria o objeto Quarto e manda pro sistema guardar
+            // Cria novo quarto e manda pro sistema
             sistema.cadastrar(new Quarto(num, tipo));
         }
-    
-        // Botão da área azul (Check-in)
+
+        // Botão Check-in
         function fazerCheckin() {
-            let num = document.getElementById("buscaNumero").value; // Qual quarto a pessoa quer?
-            let nome = document.getElementById("nomeHospede").value; // Quem é a pessoa?
-            // Manda o sistema processar a entrada
+            let num = document.getElementById("buscaNumero").value;
+            let nome = document.getElementById("nomeHospede").value;
+            // Manda fazer check-in
             sistema.fazerCheckin(num, nome);
+            // Limpa o campo de nome
+            document.getElementById("nomeHospede").value = "";
+        }
+
+        // Botão Check-out
+        function fazerCheckout() {
+            let num = document.getElementById("saidaNumero").value;
+            // Manda fazer check-out
+            sistema.fazerCheckout(num);
+            // Limpa o campo
+            document.getElementById("saidaNumero").value = "";
         }
     </script>
 </body>

@@ -2,93 +2,248 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Vet Clinic com Registro</title>
+    <title>Vet Clinic Completa</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .box { padding: 15px; border: 2px solid; margin-bottom: 15px; border-radius: 8px; }
+        .verde { border-color: #28a745; background-color: #f0fff4; }
+        .amarelo { border-color: #ffc107; background-color: #fff3cd; }
+        .roxo { border-color: #6f42c1; background-color: #f3e5f5; }
+        h3 { margin-top: 0; }
+    </style>
 </head>
 <body>
-    <h1>🐾 Clínica (Ficha + Fila)</h1>
+    <h1>🐾 Clínica Veterinária (Completa)</h1>
 
-    <div style="border: 1px dashed black; padding: 10px;">
-        <h3>1. Abrir Ficha (Cadastro)</h3>
+    <div class="box verde">
+        <h3>1. Criar Ficha (Cadastro)</h3>
         <input id="cadNome" placeholder="Nome do Pet">
-        <select id="cadTipo">
+        <select id="cadTipo" onchange="mudarOpcaoExtra()">
             <option value="cao">Cachorro</option>
             <option value="gato">Gato</option>
+        </select>
+        <select id="cadExtra">
+            <option value="P">Porte Pequeno</option>
+            <option value="G">Porte Grande</option>
         </select>
         <button onclick="cadastrarFicha()">Salvar Ficha</button>
     </div>
 
-    <div style="background: #fff3cd; padding: 10px; margin-top: 10px;">
-        <h3>2. Colocar na Fila (Triagem)</h3>
-        <p>O animal chegou? Digite o nome para por na fila:</p>
-        <input id="buscaNome" placeholder="Nome do Pet Cadastrado">
+    <div class="box amarelo">
+        <h3>2. Triagem (Chegou na clínica)</h3>
+        <p>Colocar na fila de espera:</p>
+        <input id="buscaNome" placeholder="Nome do Pet">
         <button onclick="porNaFila()">Entrar na Fila</button>
     </div>
 
-    <h3>Fila de Espera:</h3>
-    <ul id="listaFila"></ul>
+    <div class="box roxo">
+        <h3>3. Finalizar Atendimento (Cobrar)</h3>
+        <p>Chamar paciente e liberar:</p>
+        <input id="atendeNome" placeholder="Nome do Pet">
+        <button onclick="finalizar()">Finalizar Consulta</button>
+    </div>
+
+    <div style="display: flex; gap: 20px;">
+        <div style="flex: 1;">
+            <h3>⏳ Fila de Espera (Aguardando)</h3>
+            <ul id="listaFila"></ul>
+        </div>
+        
+        <div style="flex: 1; color: gray;">
+            <h3>✅ Atendidos (Histórico do Dia)</h3>
+            <ul id="listaHistorico"></ul>
+        </div>
+    </div>
 
     <script>
-        // --- 1. MODELO ---
-        class Animal {
-            constructor(nome, tipo) {
-                this.nome = nome; // Ex: "Rex"
-                this.tipo = tipo; // Ex: "Cachorro"
-            }
+        // --- FUNÇÃO VISUAL (Interface do Usuário) ---
+    // Esta função muda as opções do segundo menu (<select>) dependendo do que foi escolhido no primeiro.
+    function mudarOpcaoExtra() {
+        // 1. Pega o valor do primeiro menu (se é 'cao' ou 'gato')
+        let tipo = document.getElementById("cadTipo").value;
+        // 2. Pega o elemento HTML do segundo menu (onde vamos injetar as opções)
+        let extra = document.getElementById("cadExtra");
+        
+        // 3. Limpa qualquer opção antiga para não duplicar
+        extra.innerHTML = "";
+
+        // 4. Se for Cachorro, cria as opções de Porte (Pequeno/Grande)
+        if(tipo === "cao") {
+            extra.innerHTML = '<option value="P">Porte Pequeno</option> <option value="G">Porte Grande</option>';
+        } 
+        // 5. Se for Gato, cria as opções de Temperamento (Manso/Bravo)
+        else {
+            extra.innerHTML = '<option value="manso">Manso</option><option value="bravo">Bravo</option>';
         }
-    
-        // --- 2. SISTEMA (CLÍNICA) ---
-        class Clinica {
-            fichasPacientes = []; // LISTA 1: O "Arquivo de Gavetas". Todos os clientes da história da clínica.
-            filaEspera = [];      // LISTA 2: A "Sala de Espera". Quem está lá AGORA.
-    
-            // FUNCIONALIDADE A: Criar Ficha (Cadastro Permanente)
-            cadastrar(animal) {
-                this.fichasPacientes.push(animal); // Guarda na gaveta
-                alert(`Ficha do ${animal.nome} criada!`);
-            }
-    
-            // FUNCIONALIDADE B: Triagem (Colocar na fila do dia)
-            triagem(nomeBuscado) {
-                // PASSO 1: Busca a ficha na gaveta (fichasPacientes)
-                let paciente = this.fichasPacientes.find(p => p.nome === nomeBuscado);
-    
-                // Se não achou a ficha, manda fazer o cadastro antes
-                if (!paciente) {
-                    alert("Erro: Paciente não tem cadastro! Faça a ficha primeiro.");
-                    return;
-                }
-    
-                // PASSO 2: Se achou, copia o paciente para a fila de espera
-                // Aqui não criamos um objeto novo complexo, apenas colocamos o paciente na lista de espera
-                this.filaEspera.push(paciente);
-                this.atualizarTela();
-            }
-    
-            // Função visual
-            atualizarTela() {
-                let lista = document.getElementById("listaFila");
-                lista.innerHTML = "";
-                this.filaEspera.forEach(p => {
-                    lista.innerHTML += `<li>Aguardando: ${p.nome} (${p.tipo})</li>`;
-                });
-            }
+    }
+
+    // ==========================================================
+    // 1. MODELOS (CLASSES)
+    // Aqui definimos como os objetos "Animal", "Cachorro" e "Gato" são estruturados.
+    // ==========================================================
+
+    // CLASSE MÃE (Genérica)
+    class Animal {
+        // Construtor: O método que roda automaticamente ao dar 'new Animal()'
+        constructor(nome) { 
+            this.nome = nome; // Guarda o nome do pet
         }
-    
-        // --- 3. BOTÕES ---
-        const sistema = new Clinica();
-    
-        // Botão da área pontilhada (Cadastro)
-        function cadastrarFicha() {
-            let nome = document.getElementById("cadNome").value;
-            let tipo = document.getElementById("cadTipo").value;
-            sistema.cadastrar(new Animal(nome, tipo));
+    }
+
+    // CLASSE FILHA: Cachorro (Herda de Animal)
+    class Cachorro extends Animal {
+        constructor(nome, porte) { 
+            super(nome); // Chama o construtor da Mãe (Animal) para salvar o nome
+            this.tipo = "Cachorro"; // Define um "rótulo" fixo
+            this.porte = porte;     // Salva se é 'P' ou 'G'
         }
-    
-        // Botão da área amarela (Triagem/Fila)
-        function porNaFila() {
-            let nome = document.getElementById("buscaNome").value; // Nome do bicho que chegou
-            sistema.triagem(nome); // Tenta por na fila
+        
+        // Método exclusivo: Calcula preço baseado no porte
+        calcularPreco() { 
+            // Operador ternário: Se porte for "G", retorna 80. Senão, retorna 50.
+            return (this.porte === "G") ? 80 : 50; 
         }
+    }
+
+    // CLASSE FILHA: Gato (Herda de Animal)
+    class Gato extends Animal {
+        constructor(nome, temp) { 
+            super(nome); // Chama o construtor da Mãe
+            this.tipo = "Gato"; 
+            this.temperamento = temp; // Salva se é 'manso' ou 'bravo'
+        }
+
+        // Método exclusivo: Calcula preço baseado no temperamento
+        calcularPreco() { 
+            // Gato bravo é mais caro (risco de arranhão/sedação)
+            return (this.temperamento === "bravo") ? 90 : 40; 
+        }
+    }
+
+    // ==========================================================
+    // 2. SISTEMA (GERENTE DA CLÍNICA)
+    // Aqui está a lógica que controla as listas e o fluxo de trabalho.
+    // ==========================================================
+    class Clinica {
+        fichas = [];      // LISTA 1 (Banco de Dados): Todos os animais cadastrados na história.
+        filaEspera = [];  // LISTA 2 (Ativa): Quem chegou e está esperando atendimento AGORA.
+        historico = [];   // LISTA 3 (Finalizado): Quem já foi atendido e pagou.
+
+        // --- FUNCIONALIDADE A: CADASTRAR (Criar Ficha) ---
+        cadastrar(animal) {
+            // Adiciona o objeto animal na lista de fichas
+            this.fichas.push(animal);
+            alert(`Ficha do ${animal.nome} criada!`);
+        }
+
+        // --- FUNCIONALIDADE B: TRIAGEM (Colocar na Fila) ---
+        triagem(nomeBuscado) {
+            // 1. Busca na lista de fichas se o animal existe
+            let paciente = this.fichas.find(p => p.nome === nomeBuscado);
+            
+            // Se não achar (undefined), avisa erro e para a função
+            if (!paciente) { alert("Paciente sem ficha!"); return; }
+
+            // 2. Validação: Verifica se ele JÁ está na fila para não duplicar
+            if(this.filaEspera.includes(paciente)) { alert("Já está na fila!"); return; }
+
+            // 3. Adiciona na fila de espera
+            this.filaEspera.push(paciente);
+            
+            // 4. Atualiza a tela (HTML)
+            this.atualizarTela();
+        }
+
+        // --- FUNCIONALIDADE C: FINALIZAR ATENDIMENTO (Cobrar e Arquivar) ---
+        finalizarAtendimento(nomeBuscado) {
+            // 1. Procura em qual posição (índice) da fila esse animal está
+            let index = this.filaEspera.findIndex(p => p.nome === nomeBuscado);
+            
+            // Se index for -1, significa que não achou
+            if (index === -1) { alert("Este animal não está na fila."); return; }
+
+            // 2. Recupera o objeto do animal usando o índice
+            let paciente = this.filaEspera[index];
+
+            // 3. Cria o registro final (o "Recibo")
+            let registro = {
+                animal: paciente,  // O objeto do pet
+                hora: new Date(),  // A hora que acabou
+                valor: paciente.calcularPreco() // AQUI A MÁGICA: O sistema pede pro animal calcular seu próprio preço.
+                                                // Se for Cachorro, roda a lógica de Cachorro. Se for Gato, roda a de Gato.
+            };
+
+            // 4. Move esse registro para a lista de Histórico (Arquivo Morto)
+            this.historico.push(registro);
+
+            // 5. Remove o animal da Fila de Espera (usando splice)
+            this.filaEspera.splice(index, 1);
+
+            // 6. Avisa o valor e atualiza a tela
+            alert(`Atendimento finalizado! Valor: R$ ${registro.valor.toFixed(2)}`);
+            this.atualizarTela();
+        }
+
+        // --- ATUALIZAR TELA (Desenhar o HTML) ---
+        atualizarTela() {
+            let listaF = document.getElementById("listaFila");     // Pega a lista <ul> da Fila
+            let listaH = document.getElementById("listaHistorico");// Pega a lista <ul> do Histórico
+            
+            // Limpa as listas antes de redesenhar
+            listaF.innerHTML = ""; 
+            listaH.innerHTML = "";
+
+            // Loop 1: Desenha quem está na Fila
+            this.filaEspera.forEach(p => {
+                listaF.innerHTML += `<li>⏳ ${p.nome} (${p.tipo})</li>`;
+            });
+
+            // Loop 2: Desenha o Histórico
+            this.historico.forEach(reg => {
+                listaH.innerHTML += `
+                    <li>
+                        ✅ <strong>${reg.animal.nome}</strong> - R$ ${reg.valor.toFixed(2)}
+                        <br><small>Hora: ${reg.hora.toLocaleTimeString()}</small>
+                    </li>`;
+            });
+        }
+    }
+
+    // ==========================================================
+    // 3. INICIALIZAÇÃO (LIGAR O MOTOR)
+    // ==========================================================
+    
+    // Cria a clínica na memória
+    const sistema = new Clinica();
+
+    // Função do Botão "Salvar Ficha"
+    function cadastrarFicha() {
+        // Pega os dados dos inputs
+        let nome = document.getElementById("cadNome").value;
+        let tipo = document.getElementById("cadTipo").value;
+        let extra = document.getElementById("cadExtra").value; // Esse valor muda (P/G ou manso/bravo)
+
+        // Decide qual classe criar
+        if(tipo === "cao") {
+            sistema.cadastrar(new Cachorro(nome, extra)); // Cria Cachorro
+        } else {
+            sistema.cadastrar(new Gato(nome, extra));     // Cria Gato
+        }
+    }
+
+    // Função do Botão "Entrar na Fila"
+    function porNaFila() {
+        let nome = document.getElementById("buscaNome").value;
+        sistema.triagem(nome); // Manda pra triagem
+        document.getElementById("buscaNome").value = ""; // Limpa campo
+    }
+
+    // Função do Botão "Finalizar Consulta"
+    function finalizar() {
+        let nome = document.getElementById("atendeNome").value;
+        sistema.finalizarAtendimento(nome); // Finaliza
+        document.getElementById("atendeNome").value = ""; // Limpa campo
+    }
     </script>
 </body>
 </html>
