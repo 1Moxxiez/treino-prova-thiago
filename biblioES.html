@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Biblioteca com Registro</title>
+</head>
+<body>
+    <h1>📚 Biblioteca (Cadastro + Empréstimo)</h1>
+    
+    <div style="border: 2px solid blue; padding: 10px; margin-bottom: 10px;">
+        <h3>1. Cadastrar Novo Item no Acervo</h3>
+        <select id="tipoCadastro">
+            <option value="livro">Livro</option>
+            <option value="revista">Revista</option>
+        </select>
+        <input id="cadTitulo" placeholder="Título">
+        <input id="cadAutor" placeholder="Autor">
+        <button onclick="botaoCadastrar()">Salvar no Sistema</button>
+    </div>
+
+    <div style="border: 2px solid green; padding: 10px;">
+        <h3>2. Realizar Empréstimo</h3>
+        <p>Digite o nome do livro que já foi cadastrado acima:</p>
+        <input id="buscaTitulo" placeholder="Título do livro para emprestar">
+        <button onclick="botaoEmprestar()">Emprestar</button>
+    </div>
+
+    <h3>Itens Emprestados Agora:</h3>
+    <ul id="listaTela"></ul>
+
+    <script>
+        // --- 1. MODELOS (As Classes dos Itens) ---
+        
+        // Classe Pai: Define o básico que qualquer item tem
+        class ItemAcervo {
+            constructor(titulo, autor) {
+                this.titulo = titulo;
+                this.autor = autor;
+            }
+        }
+        // Classe Filha: Livro (Herda de ItemAcervo e ganha o tipo "Livro")
+        class Livro extends ItemAcervo {
+            constructor(titulo, autor) { super(titulo, autor); this.tipo = "Livro"; }
+        }
+        // Classe Filha: Revista (Herda de ItemAcervo e ganha o tipo "Revista")
+        class Revista extends ItemAcervo {
+            constructor(titulo, autor) { super(titulo, autor); this.tipo = "Revista"; }
+        }
+    
+        // --- 2. O SISTEMA (A Biblioteca) ---
+        class Biblioteca {
+            acervo = [];     // LISTA 1: A "Estante". Aqui ficam os livros que a biblioteca possui.
+            emprestados = []; // LISTA 2: O "Caderno de Anotações". Aqui fica quem pegou o quê.
+    
+            // FUNCIONALIDADE A: Cadastrar (Comprar o livro e por na estante)
+            cadastrarItem(item) {
+                // Validação: Procura no acervo se já tem um item com esse título
+                let existe = this.acervo.find(i => i.titulo === item.titulo);
+                
+                // Se encontrou (existe é verdadeiro), avisa e cancela (return)
+                if(existe) { alert("Já temos esse livro!"); return; }
+    
+                // Se não existe, adiciona na lista do acervo
+                this.acervo.push(item);
+                alert("Item cadastrado com sucesso no sistema!");
+            }
+    
+            // FUNCIONALIDADE B: Emprestar (Tirar da estante e dar para alguém)
+            registrarEmprestimo(tituloBuscado) {
+                // PASSO 1: Busca se o livro existe na ESTANTE (Acervo)
+                let itemNoAcervo = this.acervo.find(i => i.titulo === tituloBuscado);
+                
+                // Se não achou (é undefined), avisa que não tem como emprestar o que não existe
+                if (!itemNoAcervo) {
+                    alert("Erro: Esse livro não está cadastrado no sistema!");
+                    return;
+                }
+    
+                // PASSO 2: Cria o registro do empréstimo (O "Recibo")
+                // Note que guardamos o objeto 'item' inteiro dentro do registro
+                let registro = {
+                    item: itemNoAcervo,  // O livro em si
+                    dataSaida: new Date() // A hora que saiu
+                };
+    
+                // Adiciona na lista de emprestados
+                this.emprestados.push(registro);
+                
+                // Atualiza a tela para mostrar o novo empréstimo
+                this.atualizarTela();
+            }
+    
+            // Função visual: Atualiza a lista <ul> no HTML
+            atualizarTela() {
+                let lista = document.getElementById("listaTela"); // Pega o elemento <ul>
+                lista.innerHTML = ""; // Limpa ele
+                
+                // Para cada registro de empréstimo...
+                this.emprestados.forEach(reg => {
+                    // Adiciona uma linha (li) com o título e o tipo do livro
+                    lista.innerHTML += `<li>Emprestado: ${reg.item.titulo} (${reg.item.tipo})</li>`;
+                });
+            }
+        }
+    
+        // --- 3. INICIALIZAÇÃO ---
+        const sistema = new Biblioteca(); // Cria a biblioteca vazia
+    
+        // Função do Botão "Salvar no Sistema"
+        function botaoCadastrar() {
+            // Pega os valores digitados nos inputs da área azul
+            let tipo = document.getElementById("tipoCadastro").value;
+            let tit = document.getElementById("cadTitulo").value;
+            let aut = document.getElementById("cadAutor").value;
+    
+            // Cria o objeto certo (Livro ou Revista) e manda cadastrar
+            if(tipo === "livro") sistema.cadastrarItem(new Livro(tit, aut));
+            else sistema.cadastrarItem(new Revista(tit, aut));
+        }
+    
+        // Função do Botão "Emprestar"
+        function botaoEmprestar() {
+            // Pega o título que a pessoa digitou na busca (área verde)
+            let busca = document.getElementById("buscaTitulo").value;
+            
+            // Manda o sistema tentar emprestar esse título
+            sistema.registrarEmprestimo(busca);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Hotel com Registro</title>
+</head>
+<body>
+    <h1>🏨 Hotel (Construção + Check-in)</h1>
+
+    <div style="background: #eee; padding: 10px;">
+        <h3>1. Cadastrar Quarto (Construir)</h3>
+        <input id="numQuarto" placeholder="Número (ex: 101)">
+        <select id="tipoQuarto">
+            <option value="simples">Simples</option>
+            <option value="luxo">Luxo</option>
+        </select>
+        <button onclick="cadastrarQuarto()">Cadastrar Quarto</button>
+    </div>
+
+    <div style="background: #cce5ff; padding: 10px; margin-top: 10px;">
+        <h3>2. Check-in (Ocupar Quarto)</h3>
+        <p>Escolha um quarto existente e diga quem vai entrar:</p>
+        <input id="buscaNumero" placeholder="Número do quarto existente">
+        <input id="nomeHospede" placeholder="Nome do Hóspede">
+        <button onclick="fazerCheckin()">Fazer Check-in</button>
+    </div>
+
+    <h3>Ocupações Atuais:</h3>
+    <ul id="listaOcupados"></ul>
+
+    <script>
+        // --- 1. MODELO ---
+        class Quarto {
+            constructor(numero, tipo) {
+                this.numero = numero; // Ex: "101"
+                this.tipo = tipo;     // Ex: "Luxo"
+            }
+        }
+    
+        // --- 2. SISTEMA (HOTEL) ---
+        class Hotel {
+            quartosCadastrados = []; // LISTA 1: Os quartos físicos (paredes e portas).
+            ocupacoes = [];          // LISTA 2: As pessoas que estão dormindo lá hoje.
+    
+            // FUNCIONALIDADE A: Construir/Cadastrar Quarto
+            cadastrar(novoQuarto) {
+                // (Poderíamos adicionar validação aqui para não criar dois quartos 101, mas vamos simplificar)
+                this.quartosCadastrados.push(novoQuarto); // Salva na lista de quartos existentes
+                alert(`Quarto ${novoQuarto.numero} criado com sucesso!`);
+            }
+    
+            // FUNCIONALIDADE B: Check-in (Vincular uma pessoa a um quarto existente)
+            fazerCheckin(numeroQuarto, nomePessoa) {
+                // PASSO 1: Verifica se o quarto existe fisicamente
+                // Procura na lista 'quartosCadastrados' um quarto com esse número
+                let quartoReal = this.quartosCadastrados.find(q => q.numero === numeroQuarto);
+                
+                // Se não achou (quartoReal é undefined), erro.
+                if (!quartoReal) {
+                    alert("Erro: Esse quarto não existe no hotel! Cadastre primeiro.");
+                    return;
+                }
+    
+                // (Aqui poderíamos verificar se já tem alguém dentro, mas focaremos no cadastro)
+    
+                // PASSO 2: Cria o objeto de Ocupação
+                let ocupacao = {
+                    quarto: quartoReal, // Guarda o objeto do quarto
+                    hospede: nomePessoa, // Guarda o nome da pessoa
+                    entrada: new Date()  // Guarda a hora
+                };
+    
+                // Adiciona na lista de ocupações ativas
+                this.ocupacoes.push(ocupacao);
+                this.atualizarTela();
+            }
+    
+            // Função visual
+            atualizarTela() {
+                let lista = document.getElementById("listaOcupados");
+                lista.innerHTML = "";
+                
+                this.ocupacoes.forEach(oc => {
+                    // Mostra: Quarto 101 (Simples) - Hóspede: João
+                    // Note como acessamos oc.quarto.numero (navegando dentro dos objetos)
+                    lista.innerHTML += `<li>Quarto ${oc.quarto.numero} (${oc.quarto.tipo}) - Hóspede: ${oc.hospede}</li>`;
+                });
+            }
+        }
+    
+        // --- 3. BOTÕES ---
+        const sistema = new Hotel();
+    
+        // Botão da área cinza (Cadastro)
+        function cadastrarQuarto() {
+            let num = document.getElementById("numQuarto").value;
+            let tipo = document.getElementById("tipoQuarto").value;
+            // Cria o objeto Quarto e manda pro sistema guardar
+            sistema.cadastrar(new Quarto(num, tipo));
+        }
+    
+        // Botão da área azul (Check-in)
+        function fazerCheckin() {
+            let num = document.getElementById("buscaNumero").value; // Qual quarto a pessoa quer?
+            let nome = document.getElementById("nomeHospede").value; // Quem é a pessoa?
+            // Manda o sistema processar a entrada
+            sistema.fazerCheckin(num, nome);
+        }
+    </script>
+</body>
+</html>

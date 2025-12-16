@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Vet Clinic com Registro</title>
+</head>
+<body>
+    <h1>🐾 Clínica (Ficha + Fila)</h1>
+
+    <div style="border: 1px dashed black; padding: 10px;">
+        <h3>1. Abrir Ficha (Cadastro)</h3>
+        <input id="cadNome" placeholder="Nome do Pet">
+        <select id="cadTipo">
+            <option value="cao">Cachorro</option>
+            <option value="gato">Gato</option>
+        </select>
+        <button onclick="cadastrarFicha()">Salvar Ficha</button>
+    </div>
+
+    <div style="background: #fff3cd; padding: 10px; margin-top: 10px;">
+        <h3>2. Colocar na Fila (Triagem)</h3>
+        <p>O animal chegou? Digite o nome para por na fila:</p>
+        <input id="buscaNome" placeholder="Nome do Pet Cadastrado">
+        <button onclick="porNaFila()">Entrar na Fila</button>
+    </div>
+
+    <h3>Fila de Espera:</h3>
+    <ul id="listaFila"></ul>
+
+    <script>
+        // --- 1. MODELO ---
+        class Animal {
+            constructor(nome, tipo) {
+                this.nome = nome; // Ex: "Rex"
+                this.tipo = tipo; // Ex: "Cachorro"
+            }
+        }
+    
+        // --- 2. SISTEMA (CLÍNICA) ---
+        class Clinica {
+            fichasPacientes = []; // LISTA 1: O "Arquivo de Gavetas". Todos os clientes da história da clínica.
+            filaEspera = [];      // LISTA 2: A "Sala de Espera". Quem está lá AGORA.
+    
+            // FUNCIONALIDADE A: Criar Ficha (Cadastro Permanente)
+            cadastrar(animal) {
+                this.fichasPacientes.push(animal); // Guarda na gaveta
+                alert(`Ficha do ${animal.nome} criada!`);
+            }
+    
+            // FUNCIONALIDADE B: Triagem (Colocar na fila do dia)
+            triagem(nomeBuscado) {
+                // PASSO 1: Busca a ficha na gaveta (fichasPacientes)
+                let paciente = this.fichasPacientes.find(p => p.nome === nomeBuscado);
+    
+                // Se não achou a ficha, manda fazer o cadastro antes
+                if (!paciente) {
+                    alert("Erro: Paciente não tem cadastro! Faça a ficha primeiro.");
+                    return;
+                }
+    
+                // PASSO 2: Se achou, copia o paciente para a fila de espera
+                // Aqui não criamos um objeto novo complexo, apenas colocamos o paciente na lista de espera
+                this.filaEspera.push(paciente);
+                this.atualizarTela();
+            }
+    
+            // Função visual
+            atualizarTela() {
+                let lista = document.getElementById("listaFila");
+                lista.innerHTML = "";
+                this.filaEspera.forEach(p => {
+                    lista.innerHTML += `<li>Aguardando: ${p.nome} (${p.tipo})</li>`;
+                });
+            }
+        }
+    
+        // --- 3. BOTÕES ---
+        const sistema = new Clinica();
+    
+        // Botão da área pontilhada (Cadastro)
+        function cadastrarFicha() {
+            let nome = document.getElementById("cadNome").value;
+            let tipo = document.getElementById("cadTipo").value;
+            sistema.cadastrar(new Animal(nome, tipo));
+        }
+    
+        // Botão da área amarela (Triagem/Fila)
+        function porNaFila() {
+            let nome = document.getElementById("buscaNome").value; // Nome do bicho que chegou
+            sistema.triagem(nome); // Tenta por na fila
+        }
+    </script>
+</body>
+</html>
